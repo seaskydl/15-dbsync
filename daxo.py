@@ -10,7 +10,7 @@ if sys.platform == 'win32':
 class DAXO_INFO:
   NAME = "DAXO"
   DESC = "Data Autonomous eXecution Orchestrator"
-  VERSION = "0.1.2"
+  VERSION = "0.1.3"
   AUTHOR = "Jason"
   RELEASE = "15Feb2026"
   SINCE = "2023"
@@ -43,6 +43,8 @@ class Applications(object):
   #初始化配置、环境、工作区
   async def init(self, *argc, **argv):
     pass
+    print(argc)
+    print(argv)
 
   #	显示版本、环境、状态
   async def info(self, *argc, **argv):

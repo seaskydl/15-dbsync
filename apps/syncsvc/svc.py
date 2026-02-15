@@ -20,14 +20,14 @@ class Syncsvc(object):
     self.poller.register(self.socket, zmq.POLLIN)
     self.timeout = timeout
     self.is_running = True
-    self.db = Storage(dbpath)
+    self.db = Storage(dbpath, True)
 
     # 信号处理，确保优雅退出
     signal.signal(signal.SIGINT, self._signal_handler)
     signal.signal(signal.SIGTERM, self._signal_handler)
     print(f"SERVICE STARTED @ tcp://{host}:{port}")
 
-  async def run(self):
+  async def run(self, *argc, **argv):
     while self.is_running:
       try:
         # 使用 Poller 避免阻塞，允许程序响应退出信号

@@ -1,12 +1,4 @@
-import zmq, msgpack
-from zmq.asyncio import Context
-from common.util import GracefulShutdown
-from common.storage import Storage, IGNORE_TABLES
-
 from .svc import Syncsvc
-
-# 1. Create the asyncio-aware context
-ctx = Context.instance()
 
 # 1. svc port, 2. table for svc, 3. username, 3. password
 async def run(*argc, **argv):
@@ -18,6 +10,6 @@ async def run(*argc, **argv):
   port = argv.get('p', argv.get('port', 5555))
 
   # 2. Create a socket from the asyncio context
-  TIME_OUT = 10000 #ms
+  TIME_OUT = argv.get('t', argv.get('timeout', 10000)) #ms
   svc = Syncsvc(src, host, port, TIME_OUT)
-  await svc.run()
+  await svc.run(*argc, **argv)

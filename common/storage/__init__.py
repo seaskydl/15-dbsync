@@ -1,3 +1,4 @@
+from pathlib import Path
 from sqlite_utils import Database
 IGNORE_TABLES = ('sqlite_sequence')
 
@@ -5,7 +6,10 @@ class Storage(object):
   db_path = ''
   db = None
 
-  def __init__(self, db_path):
+  def __init__(self, db_path, chk_exist=False):
+    if chk_exist:
+      if(Path(db_path).is_file()):
+        raise Exception(f"FILE {db_path} NOT EXISTED")
     self.db_path = db_path
     self.db = Database(db_path)
 
