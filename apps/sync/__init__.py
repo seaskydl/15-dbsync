@@ -1,11 +1,10 @@
 from common.util import progress as pbar, get_settings, set_settings, utctime
-from common.syncsvr import Syncsvr
-from common.synccli import Synccli
+from common.storage import Storage, IGNORE_TABLESs
 
 IGNORE_TABLES = ('sqlite_sequence')
 async def sync(src, dst, tbls=None):
-  _src = Syncsvr(src)
-  _dst = Synccli(dst)
+  _src = Storage(src)
+  _dst = Storage(dst)
 
   if tbls is None:
     tbls = _src.tables()

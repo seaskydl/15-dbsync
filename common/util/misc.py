@@ -53,6 +53,27 @@ def get_settings(table, key, def_val=None, section="default"):
   else:
     return cfg.get(table, {}).get(key, def_val)
 
+def get_all_settings(section=None, table=None, key=None, def_val=None):
+  SETTINGS_FILE = "meta.json"
+  FOLDER = "config"
+  settings = loadJson(SETTINGS_FILE, folder=FOLDER)
+  if section is None or section == "":
+    return settings
+
+  cfg = settings.get(section, {})
+  if table is None or table == "":
+    return cfg
+
+  cfg_tbl = cfg.get(table, {})
+  if key is None or key == "":
+    return cfg_tbl
+
+  if def_val is None:
+    return cfg_tbl.get(key)
+  else:
+    return cfg_tbl.get(key, def_val)
+
+
 def set_settings(table, key, val, section="default"):
   SETTINGS_FILE = "meta.json"
   FOLDER = "config"

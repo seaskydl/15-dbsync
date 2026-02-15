@@ -1,6 +1,7 @@
 from sqlite_utils import Database
+IGNORE_TABLES = ('sqlite_sequence')
 
-class Syncsvr(object):
+class Storage(object):
   db_path = ''
   db = None
 
@@ -8,6 +9,7 @@ class Syncsvr(object):
     self.db_path = db_path
     self.db = Database(db_path)
 
+  @property
   def tables(self):
     if self.db is None:
       return []
@@ -19,4 +21,7 @@ class Syncsvr(object):
       return list(self.db[table].rows)
     else:
       return list(self.db[table].rows_where(condition))
+
+  def save(self, table, records, pk="id", alter=True):
+    self.db[table].upsert_all(records, pk=pk, alter=alter)
 

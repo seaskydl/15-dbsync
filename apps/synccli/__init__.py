@@ -1,7 +1,7 @@
 import zmq, msgpack
 from zmq.asyncio import Context
 from common.util import progress as pbar, get_settings, set_settings, utctime
-from common.synccli import Synccli
+from common.storage import Storage
 
 # 1. Create the asyncio-aware context
 ctx = Context.instance()
@@ -11,7 +11,7 @@ async def run(*argc, **argv):
   if (dst := argv.get('d', argv.get('o', argv.get('dest')))) is None:
     print(f">>>ERR: TARGET DB MUST BE PROVIDED")
     return
-  _dst = Synccli(dst)
+  _dst = Storage(dst)
 
   host = argv.get('h', argv.get('host', 'localhost'))
   port = argv.get('p', argv.get('port', 5555))
@@ -59,7 +59,7 @@ async def run(*argc, **argv):
   else:
       tbl = 'all'
       if (lst_sync_at := get_settings(tbl, "lst_sync_at", section="remote")) is not None:
-        condition = f"updated_at <= '{now}' and updated_at > '{lst_sync_at}'"
+        condition = f"updated_at > '{lst_sync_at}' and updated_at <= '{now}'"
       else:
         condition = f"updated_at <= '{now}'"
 
