@@ -13,21 +13,27 @@ class SYNC_ORCH :
 
 class Syncsvc(object):
   def __init__(self, dbpath, host="*", port=55555, timeout=1000):
-    self.ctx = Context.instance()
-    self.socket = self.ctx.socket(zmq.ROUTER)
-    self.socket.bind(f"tcp://{host}:{port}")
-    self.poller = zmq.Poller()
-    self.poller.register(self.socket, zmq.POLLIN)
+    self.host = host
+    self.port = port
     self.timeout = timeout
     self.is_running = True
     self.db = Storage(dbpath, True)
 
+  async def run(self, *argc, **argv):
+    if not self.db.inited:
+      return
+
+    self.ctx = Context.instance()
+    self.socket = self.ctx.socket(zmq.ROUTER)
+    self.socket.bind(f"tcp://{self.host}:{self.port}")
+    self.poller = zmq.Poller()
+    self.poller.register(self.socket, zmq.POLLIN)
+
     # 信号处理，确保优雅退出
     signal.signal(signal.SIGINT, self._signal_handler)
     signal.signal(signal.SIGTERM, self._signal_handler)
-    print(f"SERVICE STARTED @ tcp://{host}:{port}")
+    print(f"SERVICE STARTED @ tcp://{self.host}:{self.port}")
 
-  async def run(self, *argc, **argv):
     while self.is_running:
       try:
         # 使用 Poller 避免阻塞，允许程序响应退出信号
