@@ -10,7 +10,7 @@ if sys.platform == 'win32':
 class DAXO_INFO:
   NAME = "DAXO"
   DESC = "Data Autonomous eXecution Orchestrator"
-  VERSION = "0.1.3"
+  VERSION = "0.1.5"
   AUTHOR = "Jason"
   RELEASE = "15Feb2026"
   SINCE = "2023"
@@ -93,7 +93,7 @@ class Applications(object):
     await run(*argc, **argv)
 
   #SYNC CLIENT
-  async def client(self, *argc, **argv):
+  async def syncli(self, *argc, **argv):
     from apps.synccli import run
     await run(*argc, **argv)
 

@@ -1,0 +1,13 @@
+[server]
+host = "localhost"
+port = 5555
+
+[client]
+name = "syncli01"
+trigger = "interval"
+database = "./data/data.db"
+tables = "all"
+
+[trigger_args]
+seconds=30
+

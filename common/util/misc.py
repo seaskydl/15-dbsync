@@ -83,5 +83,10 @@ def set_settings(table, key, val, section="default"):
   cfg_tbl[key] = val
   dumpJson(filename=SETTINGS_FILE, data=settings, folder=FOLDER)
 
-def shuffle_str(k=10):
-  return ''.join(choices(string.ascii_letters, k=k))
+def shuffle_str(k=10, pattern="NLU", opt=None):
+  opt = opt or {}
+  prefix = opt.get('prefix', '')
+  suffix = opt.get('suffix', '')
+  pattern = pattern or "NLU"
+  space = f"{string.digits if 'N' in pattern else ''}{string.ascii_lowercase if 'L' in pattern else ''}{string.ascii_uppercase if 'U' in pattern else ''}"
+  return f"{prefix}{''.join(choices(space, k=k))}{suffix}"

@@ -34,6 +34,7 @@ class Syncsvc(object):
     signal.signal(signal.SIGTERM, self._signal_handler)
     print(f"SERVICE STARTED @ tcp://{self.host}:{self.port}")
 
+    now = utctime()
     while self.is_running:
       try:
         # 使用 Poller 避免阻塞，允许程序响应退出信号
@@ -44,19 +45,20 @@ class Syncsvc(object):
 
           # 处理业务逻辑
           content = msgpack.unpackb(content)
-          if content.get('strategy', SYNC_ORCH.CLIENT) == SYNC_ORCH.SERVER:
-            now = utctime()
+          if (orch := content.get('strategy', SYNC_ORCH.CLIENT)) == SYNC_ORCH.SERVER:
             lst_sync_at = get_settings(tbl, "lst_sync_at", section=identity)
             condition = f"updated_at <= '{now}'" if lst_sync_at is None else f"updated_at > '{lst_sync_at}' and updated_at <= '{now}'"
           else:
             condition = content.get('condition')
 
+          print(f"REQ from {identity.decode('utf-8')}, orchester by {'CLIENT' if orch == 0 else 'SERVER'}, tables: {content.get('tbl')}")
           if (tbl := content.get('tbl')) == 'all':
             data = {tbl:self.db.fetch(tbl, condition) for tbl in self.db.tables if tbl not in IGNORE_TABLES}
           else:
             data = self.db.fetch(tbl, condition)
           await self.socket.send_multipart([identity, b'', msgpack.packb(data)])
-          set_settings(tbl, "lst_sync_at", now, section=identity)
+          if content.get('strategy', SYNC_ORCH.CLIENT) == SYNC_ORCH.SERVER:
+            set_settings(tbl, "lst_sync_at", now, section=identity)
       except zmq.ZMQError as e:
         if e.errno == zmq.ETERM: break # 终端上下文
         print(f"ZMQ Error: {e}")

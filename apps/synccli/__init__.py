@@ -1,86 +1,48 @@
-import zmq, msgpack
-from zmq.asyncio import Context
-from common.util import progress as pbar, get_settings, set_settings, utctime
-from common.storage import Storage
+import asyncio, tomllib
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from common.util import shuffle_str, utctime
+from .client import Synccli
 
-# 1. Create the asyncio-aware context
-ctx = Context.instance()
+async def job(client, *argc, **argv):
+  await client.run(*argc, **argv)
+  print(f"JOB DONE AT {utctime()}\r\n")
 
-# 1. svc port, 2. table for svc, 3. username, 3. password
+def loadcfg():
+  with open("./config/config.toml", "rb") as f:
+    return tomllib.load(f)
+
 async def run(*argc, **argv):
-  if (dst := argv.get('d', argv.get('o', argv.get('dest')))) is None:
+  cfg = loadcfg()
+
+  cli_cfg = cfg.get('client')
+  if (dst := argv.get('d', argv.get('o', argv.get('dest'))) or cli_cfg.get('database')) is None:
     print(f">>>ERR: TARGET DB MUST BE PROVIDED")
     return
-  _dst = Storage(dst)
+  name = argv.get('n', argv.get('name', cli_cfg.get('name', shuffle_str(2, "N", {"prefix": "synccli"}))))
+  argv['t'] = argv.get('t') or argv.get('table') or cli_cfg.get('tables')
 
-  host = argv.get('h', argv.get('host', 'localhost'))
-  port = argv.get('p', argv.get('port', 5555))
+  svr_cfg = cfg.get('server')
+  host = argv.get('h', argv.get('host', 'localhost')) or svr_cfg.get('host')
+  port = argv.get('p', argv.get('port', 5555)) or svr_cfg.get('port')
 
-  sock = ctx.socket(zmq.DEALER)
-  sock.setsockopt(zmq.IDENTITY, b'synccli01')
-  sock.connect(f"tcp://{host}:{port}")
+  client = Synccli(dst, name, host, port)
+  sched = AsyncIOScheduler()
 
-  # 3 models:
-  #   1. without specify tables, server will return all tabels from server
-  #   2. specify table
-  #   3.
-  tbls = argv.get('t', argv.get('table', ''))
-  if tbls == '':
-    tbls = []
-  else:
-    tbls = tbls.split(',')
-  now = utctime()
-  if tbls:
-    idx = 0
-    for tbl in tbls:
-      if (lst_sync_at := get_settings(tbl, "lst_sync_at", section="remote")) is not None:
-        condition = f"updated_at <= '{now}' and updated_at > '{lst_sync_at}'"
-      else:
-        condition = f"updated_at <= '{now}'"
+  #sched.add_job(job, 'interval', seconds=30, args=[client], kwargs=argv)
+  sched.add_job(job, cli_cfg.get('trigger'), **cfg.get('trigger_args'), args=[client], kwargs=argv)
+  print(f"SCHEDULE AS:")
+  print(f"TRIGGER TYPE: {cli_cfg.get('trigger')}")
+  for arg, val in cfg.get('trigger_args', {}).items():
+    print(f"  {arg}: {val}")
 
-      req = msgpack.packb({'tbl': tbl, 'condition':condition})
-      idx += 1
-      pbar(0, f"No.{idx} [{tbl}]")
-      await sock.send_multipart([b'', req])
-      try:
-        _, data = await sock.recv_multipart()
-        records = msgpack.unpackb(data)
-        print("records:", records)
-      except zmq.ZMQError as e:
-        if e.errno == zmq.ETERM:
-          return   # Shutting down, quit
-        else:
-          raise
+  print("\r\n")
+  async with client:
+    sched.start()
+    print("SYNC CLIENT STARTED...")
+    print("PRESS Ctrl+C TO EXIT")
+    while client.is_running:
+      await asyncio.sleep(10)
 
-      pbar(50, f"No.{idx} [{tbl}]")
-      _dst.save(tbl, records)
-      pbar(100, f"No.{idx} [{tbl}]")
-      set_settings(tbl, "lst_sync_at", now, section="remote")
-  else:
-      tbl = 'all'
-      if (lst_sync_at := get_settings(tbl, "lst_sync_at", section="remote")) is not None:
-        condition = f"updated_at > '{lst_sync_at}' and updated_at <= '{now}'"
-      else:
-        condition = f"updated_at <= '{now}'"
-
-      req = msgpack.packb({'tbl': tbl, 'condition':condition})
-      await sock.send_multipart([b'', req])
-      try:
-        _, res = await sock.recv_multipart()
-      except zmq.ZMQError as e:
-        if e.errno == zmq.ETERM:
-          return   # Shutting down, quit
-        else:
-          raise
-
-      res = msgpack.unpackb(res)
-      idx = 1
-      for _tbl, records in res.items():
-        pbar(50, f"No.{idx} [{_tbl}]")
-        _dst.save(_tbl, records)
-        pbar(100, f"No.{idx} [{_tbl}]")
-        idx += 1
-      set_settings(tbl, "lst_sync_at", now, section="remote")
-
-  sock.close()
-  ctx.term()
+  #async with client:
+  #  await client.run(*argc, **argv)
+  # Execution will block here until Ctrl+C (Ctrl+Break on Windows) is pressed.
