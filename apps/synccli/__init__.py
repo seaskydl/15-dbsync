@@ -1,11 +1,12 @@
 import asyncio, tomllib
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from common.util import shuffle_str, utctime
+from common.logger import logger
 from .client import Synccli
 
 async def job(client, *argc, **argv):
   await client.run(*argc, **argv)
-  print(f"JOB DONE AT {utctime()}\r\n")
+  logger.info(f"JOB DONE AT {utctime()}\r\n")
 
 def loadcfg():
   with open("./config/config.toml", "rb") as f:
@@ -16,7 +17,7 @@ async def run(*argc, **argv):
 
   cli_cfg = cfg.get('client')
   if (dst := argv.get('d', argv.get('o', argv.get('dest'))) or cli_cfg.get('database')) is None:
-    print(f">>>ERR: TARGET DB MUST BE PROVIDED")
+    logger.error(f">>>ERR: TARGET DB MUST BE PROVIDED")
     return
   name = argv.get('n', argv.get('name', cli_cfg.get('name', shuffle_str(2, "N", {"prefix": "synccli"}))))
   argv['t'] = argv.get('t') or argv.get('table') or cli_cfg.get('tables')
@@ -30,16 +31,15 @@ async def run(*argc, **argv):
 
   #sched.add_job(job, 'interval', seconds=30, args=[client], kwargs=argv)
   sched.add_job(job, cli_cfg.get('trigger'), **cfg.get('trigger_args'), args=[client], kwargs=argv)
-  print(f"SCHEDULE AS:")
-  print(f"TRIGGER TYPE: {cli_cfg.get('trigger')}")
+  logger.info(f"SCHEDULE AS:")
+  logger.info(f"TRIGGER TYPE: {cli_cfg.get('trigger')}")
   for arg, val in cfg.get('trigger_args', {}).items():
-    print(f"  {arg}: {val}")
+    logger.info(f"  {arg}: {val}")
 
-  print("\r\n")
   async with client:
     sched.start()
-    print("SYNC CLIENT STARTED...")
-    print("PRESS Ctrl+C TO EXIT")
+    logger.info("SYNC CLIENT STARTED...")
+    logger.info("PRESS Ctrl+C TO EXIT")
     while client.is_running:
       await asyncio.sleep(10)
 

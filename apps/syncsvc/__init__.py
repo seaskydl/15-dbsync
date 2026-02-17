@@ -1,9 +1,10 @@
+from common.logger import logger
 from .svc import Syncsvc
 
 # 1. svc port, 2. table for svc, 3. username, 3. password
 async def run(*argc, **argv):
   if (src := argv.get('s', argv.get('src'))) is None:
-    print(f">>>ERR: SOURCE DB MUST BE PROVIDED")
+    logger.error(f"SOURCE DB MUST BE PROVIDED")
     return
 
   host = argv.get('h', argv.get('host', '*'))

@@ -1,5 +1,6 @@
 from common.util import progress as pbar, get_settings, set_settings, utctime
-from common.storage import Storage, IGNORE_TABLESs
+from common.logger import logger
+from common.storage import Storage
 
 IGNORE_TABLES = ('sqlite_sequence')
 async def sync(src, dst, tbls=None):
@@ -34,20 +35,20 @@ async def sync(src, dst, tbls=None):
 
 async def run(*argc, **argv):
   if (src := argv.get('s', argv.get('src'))) is None:
-    print(f">>>ERR: SOURCE DB MUST BE PROVIDED")
+    logger.error(f"SOURCE DB MUST BE PROVIDED")
     return
 
   if (dst := argv.get('d', argv.get('o', argv.get('dest')))) is None:
-    print(f">>>ERR: TARGET DB MUST BE PROVIDED")
+    logger.error(f"TARGET DB MUST BE PROVIDED")
     return
 
   if (src == dst):
-    print(f">>>ERR: TARGET DB MUST NOT BE SAME AS SOURCE DB")
+    logger.error(f">>>ERR: TARGET DB MUST NOT BE SAME AS SOURCE DB")
     return
 
-  print(f"WILL TRY TO SYNC DATA FROM [{src}] TO [{dst}]")
+  logger.info(f"START SYNC DATA FROM [{src}] TO [{dst}]")
   tbls = argv.get('t', argv.get('table', '')).split(',')
 
   await sync(src, dst, tbls)
 
-  print("FINISHED.")
+  logger.success("FINISHED.")

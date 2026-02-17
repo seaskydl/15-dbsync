@@ -4,6 +4,7 @@ import msgpack
 from dataclasses import dataclass
 from zmq.asyncio import Context
 from common.storage import Storage, IGNORE_TABLES
+from common.logger import logger
 from common.util import utctime, get_settings, set_settings
 
 @dataclass
@@ -32,7 +33,7 @@ class Syncsvc(object):
     # 信号处理，确保优雅退出
     signal.signal(signal.SIGINT, self._signal_handler)
     signal.signal(signal.SIGTERM, self._signal_handler)
-    print(f"SERVICE STARTED @ tcp://{self.host}:{self.port}")
+    logger.info(f"SERVICE STARTED @ tcp://{self.host}:{self.port}")
 
     now = utctime()
     while self.is_running:
@@ -51,7 +52,7 @@ class Syncsvc(object):
           else:
             condition = content.get('condition')
 
-          print(f"REQ from {identity.decode('utf-8')}, orchester by {'CLIENT' if orch == 0 else 'SERVER'}, tables: {content.get('tbl')}")
+          logger.info(f"REQ from {identity.decode('utf-8')}, orchester by {'CLIENT' if orch == 0 else 'SERVER'}, tables: {content.get('tbl')}")
           if (tbl := content.get('tbl')) == 'all':
             data = {tbl:self.db.fetch(tbl, condition) for tbl in self.db.tables if tbl not in IGNORE_TABLES}
           else:
@@ -61,7 +62,7 @@ class Syncsvc(object):
             set_settings(tbl, "lst_sync_at", now, section=identity)
       except zmq.ZMQError as e:
         if e.errno == zmq.ETERM: break # 终端上下文
-        print(f"ZMQ Error: {e}")
+        logger.error(f"ZMQ Error: {e}")
     self.cleanup()
 
   def _signal_handler(self, sig, frame):
@@ -70,4 +71,4 @@ class Syncsvc(object):
   def cleanup(self):
     self.socket.close()
     self.ctx.term()
-    print("SERVICE STOPPED.")
+    logger.info("SERVICE STOPPED.")

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import signal, zmq, msgpack
 from zmq.asyncio import Context
 from common.util import progress as pbar, get_settings, set_settings, utctime
+from common.logger import logger
 from common.storage import Storage
 
 @dataclass
@@ -30,7 +31,7 @@ class Synccli(object):
     self._is_running = True
 
   def _signal_handler(self, sig, frame):
-    print("USER BREAK, EXIT")
+    logger.info("USER BREAK, EXIT")
     self._is_running = False
 
   @property
@@ -63,14 +64,13 @@ class Synccli(object):
         try:
           _, data = await self.socket.recv_multipart()
           records = msgpack.unpackb(data)
-          #print("records:", records)
         except zmq.ZMQError as e:
           if e.errno == zmq.ETERM:
             return   # Shutting down, quit
           else:
             raise
         if not records:
-          print(f"No.{idx} [{tbl}]: NO DATA TO SYNC")
+          logger.info(f"No.{idx} [{tbl}]: NO DATA TO SYNC")
           return
         pbar(50, f"No.{idx} [{tbl}]")
         self.db.save(tbl, records)
@@ -98,7 +98,7 @@ class Synccli(object):
       for _tbl, records in res.items():
         idx += 1
         if not records:
-          print(f"No.{idx} [{tbl}]: HAS NO DATA TO SYNC")
+          logger.info(f"No.{idx} [{tbl}]: HAS NO DATA TO SYNC")
           continue
 
         pbar(50, f"No.{idx} [{_tbl}]")
@@ -107,10 +107,10 @@ class Synccli(object):
       set_settings(tbl, "lst_sync_at", now, section="remote")
 
   def cleanup(self):
-    print("SYNC CLIENT CLEAN UP...")
+    logger.info("SYNC CLIENT CLEAN UP...")
     self.socket.close()
     self.ctx.term()
-    print("SYNC CLIENT STOPPED.")
+    logger.info("SYNC CLIENT STOPPED.")
 
   def __del__(self):
     self.cleanup()

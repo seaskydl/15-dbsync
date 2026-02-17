@@ -10,7 +10,7 @@ if sys.platform == 'win32':
 class DAXO_INFO:
   NAME = "DAXO"
   DESC = "Data Autonomous eXecution Orchestrator"
-  VERSION = "0.1.5"
+  VERSION = "0.1.6"
   AUTHOR = "Jason"
   RELEASE = "15Feb2026"
   SINCE = "2023"
