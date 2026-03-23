@@ -1,0 +1,31 @@
+[client]
+name = "syncli01"
+
+[server] # default server
+host = "localhost"
+port = 5555
+
+[trigger] # default trigger
+type="interval"
+args.seconds=30
+
+
+#[task]
+[task.001]
+name = "task-01"
+database = "./data/data.db"
+tables = "*" # 'all' or "table_name1, table_name2"
+direction = "pull"
+server.host = "localhost"
+server.port = 5555
+trigger.type="interval"
+trigger.delay=0
+trigger.args.seconds=30
+
+
+[task.002]
+name = "task-02"
+database = "./data/data.db"
+tables = "*" # 'all' or "table_name1, table_name2"
+direction = "push"
+trigger.delay = 40

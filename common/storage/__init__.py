@@ -8,11 +8,9 @@ class Storage(object):
   _inited = False
 
   def __init__(self, db_path, chk_exist=False):
-
     if chk_exist and not Path(db_path).is_file():
-      print(f"FILE {db_path} IS NOT EXISTED")
       self._inited = False
-      return
+      raise Exception(f"DB FILE {db_path} IS NOT EXISTED")
 
     self.db_path = db_path
     self.db = Database(db_path)
@@ -27,7 +25,7 @@ class Storage(object):
     if self.db is None:
       return []
 
-    return self.db.table_names()
+    return (tbl for tbl in self.db.table_names() if tbl not in IGNORE_TABLES)
 
   def fetch(self, table, condition=None):
     if condition is None:

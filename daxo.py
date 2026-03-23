@@ -10,7 +10,7 @@ if sys.platform == 'win32':
 class DAXO_INFO:
   NAME = "DAXO"
   DESC = "Data Autonomous eXecution Orchestrator"
-  VERSION = "0.1.6"
+  VERSION = "1.0.1"
   AUTHOR = "Jason"
   RELEASE = "15Feb2026"
   SINCE = "2023"
@@ -84,6 +84,8 @@ class Applications(object):
 
   #LOCAL SYNC TOOL
   async def sync(self, *argc, **argv):
+    print(f"This function will be implemented later")
+    return
     from apps.sync import run
     await run(*argc, **argv)
 

@@ -18,8 +18,6 @@ CFG = {
 
 class Logger:
   def __init__(self):
-    #self._file_set = config.LOGURU_FILE
-    #self._console_set = config.LOGURU_CONSOLE
     pass
 
   def get_log_path(self, message: str) -> str:

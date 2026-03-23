@@ -1,4 +1,4 @@
-import json, string
+import json, string, inspect
 from pathlib import Path
 from random import choices
 
@@ -73,7 +73,6 @@ def get_all_settings(section=None, table=None, key=None, def_val=None):
   else:
     return cfg_tbl.get(key, def_val)
 
-
 def set_settings(table, key, val, section="default"):
   SETTINGS_FILE = "meta.json"
   FOLDER = "config"
@@ -90,3 +89,20 @@ def shuffle_str(k=10, pattern="NLU", opt=None):
   pattern = pattern or "NLU"
   space = f"{string.digits if 'N' in pattern else ''}{string.ascii_lowercase if 'L' in pattern else ''}{string.ascii_uppercase if 'U' in pattern else ''}"
   return f"{prefix}{''.join(choices(space, k=k))}{suffix}"
+
+async def call_func(func, *args, **kwargs):
+  if not callable(func):
+    raise TypeError("对象不可调用")
+
+  # 异步函数
+  if inspect.iscoroutinefunction(func):
+    return await func(*args, **kwargs)
+
+  # 同步函数
+  result = func(*args, **kwargs)
+
+  # 如果返回的是 coroutine，也自动 await
+  if inspect.iscoroutine(result):
+    return await result
+
+  return result

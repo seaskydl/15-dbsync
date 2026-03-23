@@ -1,0 +1,5 @@
+[server]
+name = "SERVER01"
+host = "localhost"
+port = 5555
+database = "./data/sevd.db"
